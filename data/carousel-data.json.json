@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "title": "Selamat Datang di Portal Sekolah",
+        "description": "Portal ini memberikan akses ke berbagai informasi dan layanan sekolah. Data siswa diakses dengan login terotorisasi.",
+        "image": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        "active": true
+    },
+    {
+        "id": 2,
+        "title": "Karya Siswa Terbaik",
+        "description": "Lihat dan apresiasi karya-karya kreatif siswa kami. Berikan komentar dan dukungan untuk perkembangan mereka!",
+        "image": "https://images.unsplash.com/photo-1524178234883-043d5c3f3cf4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        "active": true
+    },
+    {
+        "id": 3,
+        "title": "Data Siswa Terproteksi",
+        "description": "Data siswa hanya dapat diakses oleh admin, guru, dan orang tua yang telah terotorisasi.",
+        "image": "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        "active": true
+    }
+]

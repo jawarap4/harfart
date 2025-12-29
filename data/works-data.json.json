@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "title": "Lukisan Alam Pegunungan",
+        "description": "Lukisan cat air yang menggambarkan keindahan alam pegunungan di daerah Jawa Barat. Dibuat dengan teknik gradasi warna yang baik.",
+        "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "studentName": "Andi Pratama",
+        "class": "8A",
+        "date": "15 Oktober 2023",
+        "likes": 42,
+        "comments": 8,
+        "views": 156
+    },
+    {
+        "id": 2,
+        "title": "Robot Pengumpul Sampah",
+        "description": "Prototype robot yang dapat mengidentifikasi dan mengumpulkan sampah organik dan non-organik secara otomatis.",
+        "image": "https://images.unsplash.com/photo-1555255707-c07966088b7b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "studentName": "Sari Dewi",
+        "class": "9B",
+        "date": "12 Oktober 2023",
+        "likes": 67,
+        "comments": 12,
+        "views": 234
+    },
+    {
+        "id": 3,
+        "title": "Puisi 'Bentang Alam'",
+        "description": "Kumpulan puisi tentang keindahan alam Indonesia dan pentingnya menjaga kelestarian lingkungan.",
+        "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "studentName": "Maya Indah",
+        "class": "7C",
+        "date": "10 Oktober 2023",
+        "likes": 38,
+        "comments": 6,
+        "views": 189
+    }
+]

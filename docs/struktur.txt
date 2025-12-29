@@ -1,0 +1,34 @@
+sekolah-portal/
+├── index.html
+├── login.html
+├── 404.html
+├── css/
+│   ├── main.css
+│   ├── auth.css
+│   └── responsive.css
+├── js/
+│   ├── main.js
+│   ├── auth.js
+│   ├── carousel.js
+│   ├── gallery.js
+│   ├── students.js
+│   ├── admin.js
+│   ├── audit-trail.js
+│   └── firebase-config.js
+├── data/
+│   ├── carousel-data.json
+│   ├── students-data.json
+│   ├── works-data.json
+│   ├── gallery-data.json
+│   └── users-data.json
+├── images/
+│   ├── carousel/
+│   ├── works/
+│   ├── gallery/
+│   ├── avatars/
+│   └── thumbnails/
+├── docs/
+│   ├── README.md
+│   ├── FIREBASE-SETUP.md
+│   └── GITHUB-DEPLOY.md
+└── .gitignore
