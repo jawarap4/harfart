@@ -1,0 +1,57 @@
+[
+    {
+        "id": 1,
+        "title": "Panduan Belajar Efektif",
+        "description": "Buku panduan teknik belajar yang efisien dan menyenangkan untuk siswa semua tingkat",
+        "author": "Dr. Ahmad Hidayat",
+        "category": "Pendidikan",
+        "filename": "panduan-belajar.pdf",
+        "filesize": 2400000,
+        "uploadDate": "2024-12-15",
+        "url": "#"
+    },
+    {
+        "id": 2,
+        "title": "Jurnal Sains Terkini 2024",
+        "description": "Kumpulan artikel jurnal sains terbaru dengan riset terdepan dari berbagai universitas",
+        "author": "Tim Redaksi Sains",
+        "category": "Sains",
+        "filename": "jurnal-sains-2024.pdf",
+        "filesize": 3500000,
+        "uploadDate": "2024-12-10",
+        "url": "#"
+    },
+    {
+        "id": 3,
+        "title": "Sejarah Singkat Indonesia",
+        "description": "Ringkasan sejarah Indonesia dari masa prasejarah hingga era modern",
+        "author": "Prof. Bambang Suryanto",
+        "category": "Sejarah",
+        "filename": "sejarah-indonesia.pdf",
+        "filesize": 1800000,
+        "uploadDate": "2024-12-01",
+        "url": "#"
+    },
+    {
+        "id": 4,
+        "title": "Teknik Bermain Musik",
+        "description": "Panduan lengkap teknik bermain berbagai alat musik dari dasar hingga mahir",
+        "author": "Maestro Wijaya",
+        "category": "Seni",
+        "filename": "teknik-musik.pdf",
+        "filesize": 2100000,
+        "uploadDate": "2024-11-28",
+        "url": "#"
+    },
+    {
+        "id": 5,
+        "title": "Etika Bisnis Profesional",
+        "description": "Artikel tentang etika bisnis, tanggung jawab sosial, dan kepemimpinan berkelanjutan",
+        "author": "Konsultan Bisnis Nasional",
+        "category": "Bisnis",
+        "filename": "etika-bisnis.pdf",
+        "filesize": 1500000,
+        "uploadDate": "2024-11-20",
+        "url": "#"
+    }
+]
