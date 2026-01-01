@@ -23,34 +23,28 @@
         /* Semua CSS yang ada sebelumnya tetap dipertahankan */
         
         /* Tambahan untuk mobile optimization */
-        @media (max-width: 480px) {
-            body {
-                padding-top: 60px;
-                padding-bottom: 50px;
+                /* Tambahkan di bagian <style>, sebelum media query */
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
             }
-            
-            .header-nav-container,
-            .footer-nav-container {
-                padding: 0 5px;
+            to {
+                transform: translateY(0);
+                opacity: 1;
             }
-            
-            .nav-item {
-                width: 65px;
-                padding: 5px;
-            }
-            
-            .nav-item i {
-                font-size: 16px;
-            }
-            
-            .nav-item span {
-                font-size: 10px;
-            }
-            
-            .main-content {
-                padding: 15px;
-                margin: 10px;
-            }
+        }
+        
+        .loading-screen {
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .error-message {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .alert {
+            animation: slideIn 0.3s ease-out;
         }
     </style>
 </head>
@@ -92,26 +86,29 @@
                 this.isInitialized = false;
             }
 
-            async init() {
-                return new Promise((resolve, reject) => {
-                    if (this.isInitialized) return resolve(true);
-
-                    const request = indexedDB.open(this.dbName, this.dbVersion);
-
-                    request.onerror = (event) => {
-                        console.error('IndexedDB error:', event.target.error);
-                        reject(event.target.error);
-                    };
-
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        this.isInitialized = true;
-                        console.log('IndexedDB initialized successfully');
-                        resolve(true);
-                    };
-
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
+                        async init() {
+                try {
+                    // Inisialisasi storage
+                    await storage.init();
+                    
+                    // Hide loading screen
+                    this.hideLoading();
+                    
+                    await this.loadDataFromStorage();
+                    this.setupAuthListener();
+                    this.renderNavigation();
+                    this.renderPage(this.currentPage);
+                    
+                    this.setupEventListeners();
+                    this.handleHashChange();
+                    
+                    console.log('Portal initialized successfully');
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    this.showError('Gagal memuat aplikasi. Silakan refresh halaman.');
+                    this.hideLoading(); // Pastikan loading screen di-hide meski error
+                }
+            }
                         
                         // Create object stores for all data types
                         if (!db.objectStoreNames.contains('carousel')) {
@@ -705,7 +702,7 @@
             // ... (SIMPAN DAN UPDATE SEMUA METHOD LAIN DENGAN AWAIT)
         }
 
-        // ============================================
+                // ============================================
         // MAIN APPLICATION (UPDATED FOR IndexedDB)
         // ============================================
         class SekolahPortal {
@@ -727,50 +724,139 @@
                 this.init();
             }
 
-            async init() {
-                try {
-                    // Inisialisasi storage
-                    await storage.init();
-                    
-                    // PERCEPAT LOADING
+            // ====== TAMBAHKAN METHOD INI SETELAH CONSTRUCTOR ======
+            setupAuthListener() {
+                document.addEventListener('userLoggedIn', (e) => {
+                    this.currentUser = e.detail.user;
+                    this.updateUI();
+                });
+
+                document.addEventListener('userLoggedOut', () => {
+                    this.currentUser = null;
+                    this.updateUI();
+                });
+            }
+
+            showError(message) {
+                console.error('Error:', message);
+                // Buat element error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #ef476f;
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        z-index: 10000;
+                        max-width: 400px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        display: flex;
+                        align-items: center;
+                        animation: slideIn 0.3s ease-out;
+                    ">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(errorDiv);
+                setTimeout(() => errorDiv.remove(), 5000);
+            }
+
+            hideLoading() {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
                     setTimeout(() => {
-                        this.hideLoading();
-                    }, 100);
-                    
-                    await this.loadDataFromStorage();
-                    this.setupAuthListener();
-                    this.renderNavigation();
-                    this.renderPage(this.currentPage);
-                    
-                    this.setupEventListeners();
-                    this.handleHashChange();
-                    
-                    console.log('Portal initialized successfully');
-                } catch (error) {
-                    console.error('Initialization error:', error);
-                    this.showError('Gagal memuat aplikasi. Silakan refresh halaman.');
+                        loadingScreen.style.display = 'none';
+                    }, 300);
+                }
+                this.isLoading = false;
+            }
+
+            updateUI() {
+                // Update UI berdasarkan status login
+                const loginBtn = document.querySelector('.login-btn');
+                const userMenu = document.querySelector('.user-menu');
+                
+                if (this.currentUser && userMenu) {
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    userMenu.style.display = 'flex';
+                    const userName = userMenu.querySelector('.user-name');
+                    if (userName) userName.textContent = this.currentUser.name;
+                } else {
+                    if (loginBtn) loginBtn.style.display = 'block';
+                    if (userMenu) userMenu.style.display = 'none';
                 }
             }
 
-            async loadDataFromStorage() {
-                try {
-                    this.data.carousel = await storage.getItems('carousel');
-                    this.data.works = await storage.getItems('works');
-                    this.data.perpustakaan = await storage.getItems('perpustakaan');
-                    this.data.materi = await storage.getItems('materi');
-                    this.data.news = await storage.getItems('news');
-                    this.data.homeContent = await storage.getItems('homeContent');
-                    this.data.settings = await storage.getItems('settings');
-                    
-                    // Jika data kosong, load default
-                    if (this.data.carousel.length === 0) {
-                        await storage.resetToDefaultData();
-                        await this.loadDataFromStorage();
+            setupEventListeners() {
+                // Setup event listeners untuk navigasi, dll
+                document.addEventListener('click', (e) => {
+                    // Handle navigation clicks
+                    if (e.target.closest('.nav-item')) {
+                        const page = e.target.closest('.nav-item').dataset.page;
+                        if (page) {
+                            this.renderPage(page);
+                        }
                     }
-                } catch (error) {
-                    console.error('Error loading data:', error);
-                }
+                    
+                    // Handle modal close
+                    if (e.target.classList.contains('modal-close') || 
+                        e.target.classList.contains('modal') && e.target.id) {
+                        document.querySelectorAll('.modal').forEach(modal => {
+                            modal.classList.remove('active');
+                        });
+                    }
+                });
             }
+
+            handleHashChange() {
+                window.addEventListener('hashchange', () => {
+                    const page = window.location.hash.substring(1) || 'home';
+                    this.renderPage(page);
+                });
+            }
+            
+            showAlert(message, type = 'info') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: ${type === 'success' ? '#06D6A0' : 
+                                    type === 'warning' ? '#FFD166' : 
+                                    type === 'danger' ? '#EF476F' : '#118AB2'};
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        z-index: 9999;
+                        max-width: 400px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        display: flex;
+                        align-items: center;
+                        animation: slideIn 0.3s ease-out;
+                    ">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                                       type === 'warning' ? 'exclamation-triangle' : 
+                                       type === 'danger' ? 'times-circle' : 'info-circle'}" 
+                           style="margin-right: 10px;"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(alertDiv);
+                setTimeout(() => {
+                    alertDiv.style.opacity = '0';
+                    setTimeout(() => alertDiv.remove(), 300);
+                }, 3000);
+            }
+            // ====== END OF ADDED METHODS ======
 
             // ... (SIMPAN SEMUA METHOD RENDER YANG ADA)
             // UPDATE METHOD YANG PAKAI DATA DENGAN AWAIT JIKA PERLU
@@ -837,16 +923,29 @@
             // ... (SIMPAN SEMUA METHOD LAIN)
         }
 
-        // ============================================
+               // ============================================
         // SERVICE WORKER UNTUK OFFLINE SUPPORT
         // ============================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
+                // Fix path untuk GitHub Pages
+                const isGithubPages = window.location.hostname.includes('github.io');
+                let swPath = './sw.js'; // Default untuk lokal
+                
+                if (isGithubPages) {
+                    // Untuk GitHub Pages, gunakan path absolut dengan nama repo
+                    swPath = '/harfart/sw.js';
+                }
+                
+                console.log('Registering Service Worker at:', swPath);
+                navigator.serviceWorker.register(swPath)
+                    .then(function(registration) {
+                        console.log('ServiceWorker registered successfully:', registration.scope);
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed:', err);
+                        // Non-fatal error, continue without service worker
+                    });
             });
         }
 
