@@ -130,6 +130,3 @@ class FirebaseService {
 
 // Create Firebase service instance
 const firebaseService = new FirebaseService();
-
-// Export for module usage
-export { FirebaseService, firebaseService };

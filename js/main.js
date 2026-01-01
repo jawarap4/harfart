@@ -35,35 +35,75 @@ class SekolahPortal {
 
     async loadData() {
         try {
-            // Load data from JSON files or Firebase
+            // Determine API base URL
+            const apiBaseUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:3000' 
+                : '';
+            
+            // Load data from MySQL backend via API
             const responses = await Promise.all([
-                fetch('data/carousel-data.json'),
-                fetch('data/works-data.json'),
-                fetch('data/gallery-data.json')
+                fetch(`${apiBaseUrl}/api/carousel`),
+                fetch(`${apiBaseUrl}/api/works`),
+                fetch(`${apiBaseUrl}/api/gallery`),
+                fetch(`${apiBaseUrl}/api/perpustakaan`)
             ]);
             
-            const [carouselData, worksData, galleryData] = await Promise.all(
-                responses.map(r => r.json())
+            const [carouselData, worksData, galleryData, perpustakaanData] = await Promise.all(
+                responses.map(r => {
+                    if (!r.ok) throw new Error(`API error: ${r.status}`);
+                    return r.json();
+                })
             );
             
-            this.data.carousel = carouselData;
-            this.data.works = worksData;
-            this.data.gallery = galleryData;
+            this.data.carousel = carouselData || [];
+            this.data.works = worksData || [];
+            this.data.gallery = galleryData || [];
+            this.data.perpustakaan = perpustakaanData || [];
             
-            console.log('Data loaded successfully');
+            console.log('Data loaded successfully from API');
         } catch (error) {
-            console.error('Error loading data:', error);
-            this.showError('Gagal memuat data. Silakan refresh halaman.');
+            console.error('Error loading data from API:', error);
+            // Fallback: try loading from JSON files if API is unavailable
+            console.log('Attempting to load from JSON fallback...');
+            try {
+                const responses = await Promise.all([
+                    fetch('data/carousel-data.json').catch(() => ({ json: () => [] })),
+                    fetch('data/works-data.json').catch(() => ({ json: () => [] })),
+                    fetch('data/gallery-data.json').catch(() => ({ json: () => [] })),
+                    fetch('data/perpustakaan-data.json').catch(() => ({ json: () => [] }))
+                ]);
+                
+                const [carouselData, worksData, galleryData, perpustakaanData] = await Promise.all(
+                    responses.map(r => r.json().catch(() => []))
+                );
+                
+                this.data.carousel = carouselData || [];
+                this.data.works = worksData || [];
+                this.data.gallery = galleryData || [];
+                this.data.perpustakaan = perpustakaanData || [];
+                
+                console.log('Data loaded from JSON fallback');
+            } catch (fallbackError) {
+                console.error('Fallback loading also failed:', fallbackError);
+                this.showError('Gagal memuat data. Silakan refresh halaman atau hubungi administrator.');
+            }
         }
     }
 
     renderNavigation() {
         const headerNav = document.getElementById('headerNav');
         const footerNav = document.getElementById('footerNav');
+        const currentMode = localStorage.getItem('harfart_mode') || 'mock';
         
         // Header Navigation
         headerNav.innerHTML = `
             <div class="header-nav-container">
+                <div class="mode-toggle" title="Toggle between Mock and API mode">
+                    <button id="modeToggleBtn" class="mode-toggle-btn" data-mode="${currentMode}">
+                        <i class="fas fa-${currentMode === 'api' ? 'database' : 'cube'}\"></i>
+                        <span class="mode-label">${currentMode === 'api' ? 'API' : 'Mock'}</span>
+                    </button>
+                </div>
                 <a href="#home" class="nav-item ${this.currentPage === 'home' ? 'active' : ''}" data-page="home">
                     <i class="fas fa-home"></i>
                     <span>Home</span>
@@ -352,6 +392,19 @@ class SekolahPortal {
     }
 
     setupEventListeners() {
+        // Mode toggle button
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        if (modeToggleBtn) {
+            modeToggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentMode = localStorage.getItem('harfart_mode') || 'mock';
+                const newMode = currentMode === 'api' ? 'mock' : 'api';
+                authSystem.setMode(newMode === 'api');
+                this.renderNavigation();
+                this.setupEventListeners();
+                alert(`Switched to ${newMode === 'api' ? 'API Backend' : 'Mock (localStorage)'} mode.`);\n            });
+        }
+
         // Navigation clicks
         document.addEventListener('click', (e) => {
             const navItem = e.target.closest('.nav-item');
@@ -486,9 +539,11 @@ class SekolahPortal {
             return;
         }
         
-        import('./admin.js').then(module => {
-            module.AdminPanel.show();
-        });
+        if (typeof adminPanel !== 'undefined') {
+            adminPanel.show();
+        } else {
+            console.error('Admin panel not initialized');
+        }
     }
 
     updateUIForLoggedInUser() {
@@ -510,6 +565,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create and export the main application instance
     window.app = new SekolahPortal();
 });
-
-// Export for module usage
-export { SekolahPortal };

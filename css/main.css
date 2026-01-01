@@ -695,3 +695,41 @@ body {
     color: #0c5460;
     border: 1px solid #bee5eb;
 }
+
+/* ===== MODE TOGGLE BUTTON ===== */
+.mode-toggle {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+
+.mode-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition-fast);
+}
+
+.mode-toggle-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.mode-toggle-btn i {
+    font-size: 14px;
+}
+
+.mode-label {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

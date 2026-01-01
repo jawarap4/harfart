@@ -217,6 +217,3 @@ class AuditTrail {
 
 // Initialize audit trail system
 const auditTrail = new AuditTrail();
-
-// Export for module usage
-export { AuditTrail, auditTrail };
