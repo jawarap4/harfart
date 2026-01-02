@@ -1,0 +1,20 @@
+
+/* Animations for error and alerts */
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.error-message, .alert {
+    animation: slideIn 0.3s ease-out;
+}
+
+.loading-screen {
+    transition: opacity 0.3s ease-out;
+}
