@@ -37,179 +37,33 @@ class SekolahPortal {
         }
     }
 
-    async loadData() {
-        try {
-            // Load initial data
-            this.carouselData = await storage.getItems('carousel');
-            this.worksData = await storage.getItems('works');
-            this.newsData = await storage.getItems('news');
-            
-            // If no data, create defaults
-            if (this.carouselData.length === 0) {
-                await this.createDefaultData();
-                await this.loadData();
-            }
-        } catch (error) {
-            console.error('Error loading data:', error);
+// Di app.js, cari bagian loadData() dan update:
+async loadData() {
+    try {
+        // Load initial data from IndexedDB
+        this.carouselData = await storage.getItems(storage.STORES.CAROUSEL);
+        this.worksData = await storage.getItems(storage.STORES.WORKS);
+        this.newsData = await storage.getItems(storage.STORES.NEWS);
+        
+        console.log('Data loaded from IndexedDB:', {
+            carousel: this.carouselData.length,
+            works: this.worksData.length,
+            news: this.newsData.length
+        });
+        
+        // If no carousel data, create defaults
+        if (this.carouselData.length === 0) {
+            console.log('No carousel data found, creating default...');
+            await this.createDefaultData();
+            // Reload data
+            await this.loadData();
         }
-    }
-
-    async createDefaultData() {
-        const defaultCarousel = [
-            {
-                id: 1,
-                title: "Selamat Datang di Portal Sekolah",
-                description: "Portal terintegrasi untuk manajemen sekolah modern",
-                image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-                active: true
-            }
-        ];
-
-        const defaultUsers = [
-            {
-                id: 1,
-                username: "admin",
-                password: "admin123",
-                name: "Administrator",
-                role: "admin"
-            },
-            {
-                id: 2,
-                username: "guru",
-                password: "guru123",
-                name: "Guru Demo",
-                role: "guru"
-            },
-            {
-                id: 3,
-                username: "siswa",
-                password: "siswa123",
-                name: "Siswa Demo",
-                role: "siswa"
-            }
-        ];
-
-        try {
-            for (const item of defaultCarousel) {
-                await storage.createItem('carousel', item);
-            }
-            for (const user of defaultUsers) {
-                await storage.createItem('users', user);
-            }
-            console.log('Default data created');
-        } catch (error) {
-            console.error('Error creating default data:', error);
-        }
-    }
-
-    hideLoading() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        if (loadingScreen) {
-            loadingScreen.style.transition = 'opacity 0.3s';
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-            }, 300);
-        }
-        this.isLoading = false;
-    }
-
-    showError(message) {
-        console.error('Error:', message);
-        // Simple error display
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #EF476F;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            z-index: 10000;
-            max-width: 400px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-        document.body.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 5000);
-    }
-
-    renderNavigation() {
-        const headerNav = document.getElementById('headerNav');
-        if (headerNav) {
-            headerNav.innerHTML = `
-                <div class="header-nav-container">
-                    <div class="nav-brand">
-                        <i class="fas fa-school"></i>
-                        <span>Portal Sekolah</span>
-                    </div>
-                    <div class="nav-menu">
-                        ${this.currentUser ? 
-                            `<div class="user-menu">
-                                <span class="user-name">${this.currentUser.name}</span>
-                                <button class="btn-logout">Logout</button>
-                            </div>` : 
-                            `<button class="btn-login">Login</button>`
-                        }
-                    </div>
-                </div>
-            `;
-        }
-    }
-
-    renderPage(page) {
-        const mainContent = document.getElementById('mainContent');
-        if (!mainContent) return;
-
-        switch(page) {
-            case 'home':
-                this.renderHome(mainContent);
-                break;
-            default:
-                mainContent.innerHTML = `<h2>Halaman ${page}</h2>`;
-        }
-    }
-
-    renderHome(container) {
-        container.innerHTML = `
-            <div class="home-container">
-                <h1>Selamat Datang di Portal Sekolah Digital</h1>
-                <p>Sistem terintegrasi untuk manajemen sekolah modern</p>
-                
-                ${this.carouselData && this.carouselData.length > 0 ? `
-                <div class="carousel">
-                    ${this.carouselData.map(item => `
-                        <div class="carousel-item">
-                            <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/1200x600/4A90E2/FFFFFF?text=Portal+Sekolah'">
-                            <div class="carousel-caption">
-                                <h3>${item.title}</h3>
-                                <p>${item.description}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-                
-                <div class="features">
-                    <div class="feature-card">
-                        <i class="fas fa-graduation-cap"></i>
-                        <h3>Pembelajaran Digital</h3>
-                        <p>Akses materi pembelajaran kapan saja</p>
-                    </div>
-                    <div class="feature-card">
-                        <i class="fas fa-users"></i>
-                        <h3>Kolaborasi Siswa</h3>
-                        <p>Berbagi karya dan kolaborasi</p>
-                    </div>
-                    <div class="feature-card">
-                        <i class="fas fa-newspaper"></i>
-                        <h3>Informasi Terkini</h3>
-                        <p>Update berita dan informasi sekolah</p>
-                    </div>
-                </div>
-            </div>
-        `;
+    } catch (error) {
+        console.error('Error loading data from IndexedDB:', error);
+        // Fallback to empty arrays
+        this.carouselData = [];
+        this.worksData = [];
+        this.newsData = [];
     }
 }
 // ============================================
