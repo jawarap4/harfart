@@ -7,26 +7,38 @@ class IndexedDBStorage {
         this.dbVersion = 3;
         this.db = null;
         this.isInitialized = false;
+        this.initInProgress = null;
     }
 
-    async init() {
-        console.log('IndexedDB initializing...');
-        return new Promise((resolve, reject) => {
-            if (this.isInitialized) return resolve(true);
+async init() {
+    // Jika sudah terinisialisasi, langsung resolve
+    if (this.isInitialized) {
+        return Promise.resolve(true);
+    }
 
-            const request = indexedDB.open(this.dbName, this.dbVersion);
+    // Jika sedang dalam proses inisialisasi, kembalikan promise yang sama
+    if (this.initPromise) {
+        return this.initPromise;
+    }
 
-            request.onerror = (event) => {
-                console.error('IndexedDB error:', event.target.error);
-                reject(event.target.error);
-            };
+    this.initPromise = new Promise((resolve, reject) => {
+        // ... kode inisialisasi
 
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                this.isInitialized = true;
-                console.log('IndexedDB initialized successfully');
-                resolve(true);
-            };
+        request.onsuccess = (event) => {
+            this.db = event.target.result;
+            this.isInitialized = true;
+            console.log('IndexedDB initialized successfully');
+            resolve(true);
+        };
+
+        request.onerror = (event) => {
+            console.error('IndexedDB error:', event.target.error);
+            reject(event.target.error);
+        };
+    });
+
+    return this.initPromise;
+}
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
@@ -48,8 +60,9 @@ class IndexedDBStorage {
                 console.log('IndexedDB stores created');
             };
         });
-    }
 
+        return this.initPromise;
+    }
     // Basic CRUD methods
     async getItems(storeName) {
         await this.init();

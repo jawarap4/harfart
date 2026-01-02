@@ -8,6 +8,12 @@ class SekolahPortal {
         this.isLoading = true;
         
         this.init();
+        // Debounce untuk prevent multiple instantiation
+        if (window.SekolahPortalInstance) {
+            console.warn("SekolahPortal already instantiated, returning existing instance");
+            return window.SekolahPortalInstance;
+        }
+        window.SekolahPortalInstance = this;
     }
 
     async init() {
@@ -175,7 +181,7 @@ class SekolahPortal {
                 <div class="carousel">
                     ${this.carouselData.map(item => `
                         <div class="carousel-item">
-                            <img src="${item.image}" alt="${item.title}">
+                            <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/1200x600/4A90E2/FFFFFF?text=Portal+Sekolah'">
                             <div class="carousel-caption">
                                 <h3>${item.title}</h3>
                                 <p>${item.description}</p>
