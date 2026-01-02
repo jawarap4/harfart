@@ -241,11 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Favicon default ditambahkan');
     }
 });
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new SekolahPortal();
-});
-
 // ============================================
 // ERROR HANDLING - IGNORE NON-CRITICAL ERRORS
 // ============================================
