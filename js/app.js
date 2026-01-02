@@ -6,62 +6,100 @@ class SekolahPortal {
         this.currentPage = 'home';
         this.currentUser = null;
         this.isLoading = true;
-        this.data = {
-            carousel: [],
-            works: [],
-            gallery: [],
-            perpustakaan: [],
-            materi: [],
-            news: [],
-            homeContent: [],
-            settings: []
-        };
         
         this.init();
     }
 
-    setupAuthListener() {
-        document.addEventListener('userLoggedIn', (e) => {
-            this.currentUser = e.detail.user;
-            this.updateUI();
-        });
-
-        document.addEventListener('userLoggedOut', () => {
-            this.currentUser = null;
-            this.updateUI();
-        });
+    async init() {
+        try {
+            await storage.init();
+            this.currentUser = await storage.getCurrentUser();
+            this.hideLoading();
+            
+            // Load data
+            await this.loadData();
+            
+            // Setup UI
+            this.renderNavigation();
+            this.renderPage(this.currentPage);
+            
+            console.log('Portal initialized successfully');
+        } catch (error) {
+            console.error('Initialization error:', error);
+            this.showError('Gagal memuat aplikasi');
+            this.hideLoading();
+        }
     }
 
-    showError(message) {
-        console.error('Error:', message);
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #ef476f;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                z-index: 10000;
-                max-width: 400px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                display: flex;
-                align-items: center;
-            ">
-                <i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        document.body.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 5000);
+    async loadData() {
+        try {
+            // Load initial data
+            this.carouselData = await storage.getItems('carousel');
+            this.worksData = await storage.getItems('works');
+            this.newsData = await storage.getItems('news');
+            
+            // If no data, create defaults
+            if (this.carouselData.length === 0) {
+                await this.createDefaultData();
+                await this.loadData();
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    async createDefaultData() {
+        const defaultCarousel = [
+            {
+                id: 1,
+                title: "Selamat Datang di Portal Sekolah",
+                description: "Portal terintegrasi untuk manajemen sekolah modern",
+                image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+                active: true
+            }
+        ];
+
+        const defaultUsers = [
+            {
+                id: 1,
+                username: "admin",
+                password: "admin123",
+                name: "Administrator",
+                role: "admin"
+            },
+            {
+                id: 2,
+                username: "guru",
+                password: "guru123",
+                name: "Guru Demo",
+                role: "guru"
+            },
+            {
+                id: 3,
+                username: "siswa",
+                password: "siswa123",
+                name: "Siswa Demo",
+                role: "siswa"
+            }
+        ];
+
+        try {
+            for (const item of defaultCarousel) {
+                await storage.createItem('carousel', item);
+            }
+            for (const user of defaultUsers) {
+                await storage.createItem('users', user);
+            }
+            console.log('Default data created');
+        } catch (error) {
+            console.error('Error creating default data:', error);
+        }
     }
 
     hideLoading() {
         const loadingScreen = document.getElementById('loadingScreen');
         if (loadingScreen) {
+            loadingScreen.style.transition = 'opacity 0.3s';
             loadingScreen.style.opacity = '0';
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
@@ -70,132 +108,106 @@ class SekolahPortal {
         this.isLoading = false;
     }
 
-    updateUI() {
-        const loginBtn = document.querySelector('.login-btn');
-        const userMenu = document.querySelector('.user-menu');
-        
-        if (this.currentUser && userMenu) {
-            if (loginBtn) loginBtn.style.display = 'none';
-            userMenu.style.display = 'flex';
-            const userName = userMenu.querySelector('.user-name');
-            if (userName) userName.textContent = this.currentUser.name;
-        } else {
-            if (loginBtn) loginBtn.style.display = 'block';
-            if (userMenu) userMenu.style.display = 'none';
-        }
-    }
-
-    async init() {
-        try {
-            await storage.init();
-            this.hideLoading();
-            await this.loadDataFromStorage();
-            this.setupAuthListener();
-            this.renderNavigation();
-            this.renderPage(this.currentPage);
-            this.setupEventListeners();
-            this.handleHashChange();
-            
-            console.log('Portal initialized successfully');
-        } catch (error) {
-            console.error('Initialization error:', error);
-            this.showError('Gagal memuat aplikasi. Silakan refresh halaman.');
-            this.hideLoading();
-        }
-    }
-
-    async loadDataFromStorage() {
-        try {
-            this.data.carousel = await storage.getItems('carousel');
-            this.data.works = await storage.getItems('works');
-            this.data.perpustakaan = await storage.getItems('perpustakaan');
-            this.data.materi = await storage.getItems('materi');
-            this.data.news = await storage.getItems('news');
-            this.data.homeContent = await storage.getItems('homeContent');
-            this.data.settings = await storage.getItems('settings');
-            
-            if (this.data.carousel.length === 0) {
-                await storage.resetToDefaultData();
-                await this.loadDataFromStorage();
-            }
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    }
-
-    setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.nav-item')) {
-                const page = e.target.closest('.nav-item').dataset.page;
-                if (page) {
-                    this.renderPage(page);
-                }
-            }
-            
-            if (e.target.classList.contains('modal-close') || 
-                e.target.classList.contains('modal') && e.target.id) {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('active');
-                });
-            }
-        });
-    }
-
-    handleHashChange() {
-        window.addEventListener('hashchange', () => {
-            const page = window.location.hash.substring(1) || 'home';
-            this.renderPage(page);
-        });
-    }
-
-    showAlert(message, type = 'info') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type}`;
-        alertDiv.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${type === 'success' ? '#06D6A0' : 
-                            type === 'warning' ? '#FFD166' : 
-                            type === 'danger' ? '#EF476F' : '#118AB2'};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                z-index: 9999;
-                max-width: 400px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                display: flex;
-                align-items: center;
-            ">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 
-                               type === 'warning' ? 'exclamation-triangle' : 
-                               type === 'danger' ? 'times-circle' : 'info-circle'}" 
-                   style="margin-right: 10px;"></i>
-                <span>${message}</span>
-            </div>
+    showError(message) {
+        console.error('Error:', message);
+        // Simple error display
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #EF476F;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         `;
-        document.body.appendChild(alertDiv);
-        setTimeout(() => {
-            alertDiv.style.opacity = '0';
-            setTimeout(() => alertDiv.remove(), 300);
-        }, 3000);
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
     }
 
-    // Method render akan ditambahkan nanti
     renderNavigation() {
-        // Placeholder - akan diisi dari kode asli
-        console.log('renderNavigation called');
+        const headerNav = document.getElementById('headerNav');
+        if (headerNav) {
+            headerNav.innerHTML = `
+                <div class="header-nav-container">
+                    <div class="nav-brand">
+                        <i class="fas fa-school"></i>
+                        <span>Portal Sekolah</span>
+                    </div>
+                    <div class="nav-menu">
+                        ${this.currentUser ? 
+                            `<div class="user-menu">
+                                <span class="user-name">${this.currentUser.name}</span>
+                                <button class="btn-logout">Logout</button>
+                            </div>` : 
+                            `<button class="btn-login">Login</button>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
     }
 
     renderPage(page) {
-        // Placeholder - akan diisi dari kode asli
-        console.log('renderPage called:', page);
+        const mainContent = document.getElementById('mainContent');
+        if (!mainContent) return;
+
+        switch(page) {
+            case 'home':
+                this.renderHome(mainContent);
+                break;
+            default:
+                mainContent.innerHTML = `<h2>Halaman ${page}</h2>`;
+        }
     }
 
-    renderCarousel() {
-        // Placeholder
-        console.log('renderCarousel called');
+    renderHome(container) {
+        container.innerHTML = `
+            <div class="home-container">
+                <h1>Selamat Datang di Portal Sekolah Digital</h1>
+                <p>Sistem terintegrasi untuk manajemen sekolah modern</p>
+                
+                ${this.carouselData && this.carouselData.length > 0 ? `
+                <div class="carousel">
+                    ${this.carouselData.map(item => `
+                        <div class="carousel-item">
+                            <img src="${item.image}" alt="${item.title}">
+                            <div class="carousel-caption">
+                                <h3>${item.title}</h3>
+                                <p>${item.description}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h3>Pembelajaran Digital</h3>
+                        <p>Akses materi pembelajaran kapan saja</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Kolaborasi Siswa</h3>
+                        <p>Berbagi karya dan kolaborasi</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-newspaper"></i>
+                        <h3>Informasi Terkini</h3>
+                        <p>Update berita dan informasi sekolah</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new SekolahPortal();
+});

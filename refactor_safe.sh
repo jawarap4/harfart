@@ -1,3 +1,18 @@
+#!/bin/bash
+echo "=== REFACTOR AMAN BERTAHAP ==="
+
+# 1. Backup lagi
+cp index.html index.html.full
+
+# 2. Ekstrak CSS (tapi jangan hapus dari HTML dulu)
+sed -n '/<style>/,/<\/style>/p' index.html | sed '1d;$d' > css/main.css
+
+# 3. Buat file JS dengan kode lengkap
+# Ekstrak semua JavaScript
+sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > js/full.js
+
+# 4. Buat index.html baru yang ringkas (TAPI SIMPAN YANG LAMA)
+cat > index.html.new << 'HTML_EOF'
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -42,24 +57,17 @@
     <div id="adminModal" class="modal"></div>
     <div id="newsDetailModal" class="modal"></div>
 
-    <!-- JavaScript Files -->
-    <script src="js/storage.js"></script>
-    <script src="js/app.js"></script>
-    
-    <!-- Service Worker Registration -->
-    <script>
-    if ('serviceWorker' in navigator) {
-        const isGithubPages = window.location.hostname.includes('github.io');
-        const swPath = isGithubPages ? '/harfart/sw.js' : './sw.js';
-        
-        navigator.serviceWorker.register(swPath)
-            .then(registration => {
-                console.log('Service Worker registered:', registration.scope);
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-    }
-    </script>
+    <!-- JavaScript (sementara satu file dulu) -->
+    <script src="js/full.js"></script>
 </body>
 </html>
+HTML_EOF
+
+echo "✓ File baru dibuat: index.html.new"
+echo "✓ CSS: css/main.css"
+echo "✓ JavaScript: js/full.js (lengkap)"
+echo ""
+echo "Langkah selanjutnya:"
+echo "1. Test index.html.new di lokal"
+echo "2. Jika berhasil, ganti index.html"
+echo "3. Kemudian pisahkan JavaScript bertahap"

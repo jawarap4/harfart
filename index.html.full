@@ -46,20 +46,13 @@
     <script src="js/storage.js"></script>
     <script src="js/app.js"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Initialize App -->
     <script>
-    if ('serviceWorker' in navigator) {
-        const isGithubPages = window.location.hostname.includes('github.io');
-        const swPath = isGithubPages ? '/harfart/sw.js' : './sw.js';
-        
-        navigator.serviceWorker.register(swPath)
-            .then(registration => {
-                console.log('Service Worker registered:', registration.scope);
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-    }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.app) {
+                window.app = new SekolahPortal();
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,203 @@
+#!/bin/bash
+
+echo "=== PORTAL SEKOLAH REFACTOR SCRIPT ==="
+echo "Memisahkan HTML, CSS, dan JavaScript..."
+
+# 1. Buat folder yang diperlukan
+mkdir -p css js
+
+# 2. Backup file asli
+BACKUP_DIR="backup_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+cp index.html "$BACKUP_DIR/"
+cp sw.js "$BACKUP_DIR/" 2>/dev/null || true
+echo "‚úì Backup dibuat di folder: $BACKUP_DIR"
+
+# 3. Ekstrak CSS dari index.html jika ada di dalam tag <style>
+echo "‚è≥ Mengekstrak CSS..."
+if grep -q "<style>" index.html; then
+    # Ekstrak konten CSS antara <style> dan </style>
+    sed -n '/<style>/,/<\/style>/p' index.html > temp_css.txt
+    # Hapus baris pertama (<style>) dan terakhir (</style>)
+    sed -i '1d; $d' temp_css.txt
+    mv temp_css.txt css/main.css
+    echo "‚úì CSS diekstrak ke css/main.css"
+    
+    # Hapus CSS dari index.html
+    sed -i '/<style>/,/<\/style>/d' index.html
+    echo "‚úì CSS dihapus dari index.html"
+else
+    echo "‚ö† Tidak ada CSS inline di index.html"
+    # Buat file CSS min
+
+# 4. Tambahkan link CSS ke index.html
+if ! grep -q "css/main.css" index.html; then
+    # Cari baris dengan </title> dan tambahkan link CSS setelahnya
+    sed -i '/<\/title>/a\    <link rel="stylesheet" href="css/main.css">' index.html
+    echo "‚úì Link CSS ditambahkan ke index.html"
+fi
+
+# 5. Ekstrak JavaScript ke file terpisah
+echo "‚è≥ Mengekstrak JavaScript..."
+# Ekstrak seluruh konten script (dari <script> pertama hingga </script> terakhir)
+# Kita akan ambil semua kode antara tag <script> dan </script>
+sed -n '/<script>/,/<\/script>/p' index.html > temp_js.txt
+
+# Hapus baris pertama (<script>) dan terakhir (</script>)
+sed -i '1d; $d' temp_js.txt
+
+if [ -s temp_js.txt ]; then
+    # Pisahkan kode JavaScript menjadi beberapa file
+    
+    # 5a. File storage.js - IndexedDB Storage Manager
+    echo "// ===== INDEXEDDB STORAGE MANAGER =====" > js/storage.js
+    sed -n '/class IndexedDBStorage/,/const storage = new IndexedDBStorage();/p' temp_js.txt | head -n -1 >> js/storage.js
+    echo "const storage = new IndexedDBStorage();" >> js/storage.js
+    echo "‚úì js/storage.js dibuat"
+    
+    # 5b. File app.js - Main Application
+    cat > js/app.js << 'APP_EOF'
+// ===== MAIN APPLICATION =====
+class SekolahPortal {
+    constructor() {
+        this.currentPage = 'home';
+        this.currentUser = null;
+        this.isLoading = true;
+        this.data = {
+            carousel: [], works: [], gallery: [], 
+            perpustakaan: [], materi: [], news: [],
+            homeContent: [], settings: []
+        };
+        this.init();
+    }
+
+    async init() {
+        try {
+            await storage.init();
+            this.hideLoading();
+            console.log('Portal initialized successfully');
+        } catch (error) {
+            console.error('Initialization error:', error);
+            this.hideLoading();
+        }
+    }
+
+    hideLoading() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+        }
+        this.isLoading = false;
+    }
+}
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        const isGithubPages = window.location.hostname.includes('github.io');
+        const swPath = isGithubPages ? '/harfart/sw.js' : './sw.js';
+        
+        navigator.serviceWorker.register(swPath)
+            .then(reg => console.log('Service Worker registered:', reg.scope))
+            .catch(err => console.log('Service Worker registration failed:', err));
+    });
+}
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.app = new SekolahPortal();
+});
+APP_EOF
+    echo "‚úì js/app.js dibuat"
+    
+    # 5c. File utils.js - Utility Functions
+    cat > js/utils.js << 'UTILS_EOF'
+// ===== UTILITY FUNCTIONS =====
+const Utils = {
+    showAlert: function(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.innerHTML = \`
+            <div style="
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: \${type === 'success' ? '#06D6A0' : 
+                            type === 'warning' ? '#FFD166' : 
+                            type === 'danger' ? '#EF476F' : '#118AB2'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                display: flex;
+                align-items: center;
+            ">
+                <i class="fas fa-\${type === 'success' ? 'check-circle' : 
+                               type === 'warning' ? 'exclamation-triangle' : 
+                               type === 'danger' ? 'times-circle' : 'info-circle'}" 
+                   style="margin-right: 10px;"></i>
+                <span>\${message}</span>
+            </div>
+        \`;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => {
+            alertDiv.style.opacity = '0';
+            setTimeout(() => alertDiv.remove(), 300);
+        }, 3000);
+    },
+    
+    formatDate: function(date) {
+        return new Date(date).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+};
+UTILS_EOF
+    echo "‚úì js/utils.js dibuat"
+    
+    rm -f temp_js.txt
+    echo "‚úì JavaScript diekstrak ke folder js/"
+    
+    # Hapus tag script dari index.html
+    sed -i '/<script>/,/<\/script>/d' index.html
+    echo "‚úì JavaScript dihapus dari index.html"
+else
+    echo "‚ö† Tidak ditemukan JavaScript inline di index.html"
+fi
+
+# 6. Tambahkan tag script untuk file JavaScript eksternal
+echo "‚è≥ Menambahkan referensi JavaScript ke index.html..."
+# Tambahkan di sebelum </body>
+sed -i '/<\/body>/i\    <!-- JavaScript Files -->\
+    <script src="js/storage.js"></script>\
+    <script src="js/utils.js"></script>\
+    <script src="js/app.js"></script>' index.html
+
+echo "‚úì Referensi JavaScript ditambahkan ke index.html"
+
+echo ""
+echo "=== REFACTOR SELESAI ==="
+echo "Struktur baru:"
+ls -la
+echo ""
+echo "Ì≥Å Folder css/:"
+ls -la css/
+echo ""
+echo "Ì≥Å Folder js/:"
+ls -la js/
+echo ""
+echo "Ì≥ù Catatan:"
+echo "1. File index.html sekarang lebih ringkas"
+echo "2. CSS dipisahkan ke css/main.css"
+echo "3. JavaScript dipisahkan ke folder js/"
+echo "4. Backup tersedia di folder: $BACKUP_DIR"
+echo ""
+echo "Ì∫Ä Deploy ke GitHub:"
+echo "   git add ."
+echo "   git commit -m 'Refactor: Pisahkan HTML, CSS, dan JS'"
+echo "   git push origin main"
